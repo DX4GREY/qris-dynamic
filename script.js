@@ -53,6 +53,7 @@
     const qrCanvas = document.getElementById('qrCanvas');
     const rawQrisSpan = document.getElementById('rawQrisString');
     const copyRawBtn = document.getElementById('copyRawBtn');
+    const saveQrBtn = document.getElementById('saveQrBtn');
     const scanBtn = document.getElementById('scanBtn');
     const uploadQrisBtn = document.getElementById('uploadQrisBtn');
     const uploadQrisInput = document.getElementById('uploadQrisInput');
@@ -158,6 +159,86 @@
             }
             console.error(error);
         }
+    }
+
+    function createStyledQrImageCanvas(text, merchantName, amountText) {
+        const canvasWidth = 1000;
+        const canvasHeight = 1300;
+        const canvas = document.createElement('canvas');
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+        const ctx = canvas.getContext('2d');
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+        // Accent bars
+        ctx.fillStyle = '#d62828';
+        ctx.fillRect(0, 0, 40, 220);
+        ctx.fillRect(canvasWidth - 40, canvasHeight - 220, 40, 220);
+        ctx.fillRect(0, canvasHeight - 40, 220, 40);
+        ctx.fillRect(canvasWidth - 220, 0, 220, 40);
+
+        // Merchant name
+        ctx.fillStyle = '#111827';
+        ctx.font = 'bold 56px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(merchantName || 'QRIS PAYMENT', canvasWidth / 2, 140);
+
+        // Amount
+        ctx.fillStyle = '#111827';
+        ctx.font = 'bold 72px system-ui, sans-serif';
+        ctx.fillText(amountText || 'Rp 0', canvasWidth / 2, 230);
+
+        // QRIS label
+        ctx.fillStyle = '#0f172a';
+        ctx.font = '600 32px system-ui, sans-serif';
+        ctx.fillText('QRIS', canvasWidth / 2, 290);
+
+        // QR code block
+        const qrCodeSize = 680;
+        const qrOffsetX = (canvasWidth - qrCodeSize) / 2;
+        const qrOffsetY = 340;
+        const qr = qrcode(0, 'M');
+        qr.addData(text);
+        qr.make();
+        const qrModuleCount = qr.getModuleCount();
+        const moduleSize = Math.floor(qrCodeSize / qrModuleCount);
+        const qrRenderSize = moduleSize * qrModuleCount;
+        const qrMargin = (qrCodeSize - qrRenderSize) / 2;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(qrOffsetX, qrOffsetY, qrCodeSize, qrCodeSize);
+        ctx.fillStyle = '#000000';
+        for (let row = 0; row < qrModuleCount; row++) {
+            for (let col = 0; col < qrModuleCount; col++) {
+                if (qr.isDark(row, col)) {
+                    ctx.fillRect(
+                        qrOffsetX + qrMargin + col * moduleSize,
+                        qrOffsetY + qrMargin + row * moduleSize,
+                        moduleSize,
+                        moduleSize
+                    );
+                }
+            }
+        }
+
+        // Bottom text
+        ctx.fillStyle = '#334155';
+        ctx.font = '500 24px system-ui, sans-serif';
+        ctx.fillText('Scan to pay with QRIS', canvasWidth / 2, qrOffsetY + qrCodeSize + 60);
+
+        return canvas;
+    }
+
+    function downloadStyledQrImage(rawText) {
+        const merchantName = merchantNameInfo.innerText === '-' ? '' : merchantNameInfo.innerText;
+        const amountText = parseTLV(rawText)['54'] ? formatAmount(parseTLV(rawText)['54']) : '-';
+        const styledCanvas = createStyledQrImageCanvas(rawText, merchantName, amountText);
+        const link = document.createElement('a');
+        link.href = styledCanvas.toDataURL('image/png');
+        link.download = `qris-${merchantName ? merchantName.replace(/\s+/g, '_').toLowerCase() : 'payment'}.png`;
+        link.click();
     }
 
     function isDynamicBase(rawBase) {
@@ -358,6 +439,16 @@
 
     scanBtn.addEventListener('click', scanQRISWithCamera);
     uploadQrisBtn.addEventListener('click', () => uploadQrisInput.click());
+    if (saveQrBtn) {
+        saveQrBtn.addEventListener('click', () => {
+            const rawText = rawQrisSpan.innerText;
+            if (!rawText || rawText.startsWith('Error') || rawText === '—') {
+                alert('Tidak ada QRIS valid untuk disimpan. Generate atau upload base QRIS terlebih dahulu.');
+                return;
+            }
+            downloadStyledQrImage(rawText);
+        });
+    }
 
     function decodeQrisFromImageFile(file) {
         return new Promise((resolve, reject) => {
