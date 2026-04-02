@@ -57,6 +57,7 @@
     const qrStatusSpan = document.getElementById('qrStatus');
     const merchantNameInfo = document.getElementById('merchantNameInfo');
     const merchantCityInfo = document.getElementById('merchantCityInfo');
+    const merchantProviderInfo = document.getElementById('merchantProviderInfo');
 
     // set default base QRIS
     baseQrisTextarea.value = DEFAULT_QRIS_BASE;
@@ -92,11 +93,18 @@
         if (!rawBase || rawBase.length < 4 || !rawBase.includes('010211') || !rawBase.includes('5802ID')) {
             merchantNameInfo.innerText = '-';
             merchantCityInfo.innerText = '-';
+            merchantProviderInfo.innerText = '-';
             return;
         }
         const tlv = parseTLV(rawBase);
         merchantNameInfo.innerText = tlv['59'] || '-';
         merchantCityInfo.innerText = tlv['60'] || '-';
+        let provider = '-';
+        if (tlv['26']) {
+            const nested = parseTLV(tlv['26']);
+            provider = nested['00'] || '-';
+        }
+        merchantProviderInfo.innerText = provider;
     }
 
     baseQrisTextarea.addEventListener('input', updateMerchantInfo);
