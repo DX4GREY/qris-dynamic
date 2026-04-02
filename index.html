@@ -29,17 +29,22 @@
                     <div class="merchant-info">
                         <div><strong>Merchant:</strong> <span id="merchantNameInfo">-</span></div>
                         <div><strong>Kota:</strong> <span id="merchantCityInfo">-</span></div>
-                        <div><strong>Provider:</strong> <span id="merchantProviderInfo">-</span></div>
+                        <div><strong>Postal Code:</strong> <span id="merchantPostalInfo">-</span></div>
+                        <div><strong>Issuer:</strong> <span id="merchantIssuerInfo">-</span></div>
+                        <div><strong>Method:</strong> <span id="merchantMethodInfo">-</span></div>
+                        <div><strong>Category:</strong> <span id="merchantCategoryInfo">-</span></div>
+                        <div><strong>Currency:</strong> <span id="merchantCurrencyInfo">-</span></div>
+                        <div><strong>Amount:</strong> <span id="merchantAmountInfo">-</span></div>
                     </div>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group jembut">
                     <label>💰 Nominal (IDR)</label>
                     <input type="number" id="nominalInput" value="25000" step="500" min="1" placeholder="Contoh: 25000">
                     <div class="note">Tanpa titik/koma, angka bulat (contoh: 15000)</div>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group jembut">
                     <label>⚙️ Tambahkan Service Fee?</label>
                     <div style="display: flex; gap: 1rem; align-items: center;">
                         <label style="display: flex; align-items: center; gap: 6px; font-weight: normal;">
@@ -52,7 +57,7 @@
                 </div>
 
                 <div id="feeOptionsPanel" style="display: none;">
-                    <div class="form-group">
+                    <div class="form-group jembut">
                         <label>🏷️ Tipe Fee</label>
                         <div class="fee-options">
                             <label class="radio-group">
@@ -63,16 +68,16 @@
                             </label>
                         </div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group jembut">
                         <label>💵 Nilai Fee</label>
                         <input type="text" id="feeValueInput" placeholder="Contoh: 2.5 (untuk 2.5%) atau 3000" value="2.5">
                         <div class="note">Jika persentase, tulis angka (bisa desimal). Jika nominal tetap, tulis angka IDR.</div>
                     </div>
                 </div>
 
-                <button class="btn-generate" id="generateBtn">✨ GENERATE QR CODE & PAYMENT ✨</button>
+                <button class="btn-generate jembut" id="generateBtn">✨ GENERATE QR CODE & PAYMENT ✨</button>
                 <div class="flex-btns">
-                    <button class="copy-btn" id="copyRawBtn">📋 Salin Raw QRIS</button>
+                    <button class="copy-btn jembut" id="copyRawBtn">📋 Salin Raw QRIS</button>
                 </div>
             </div>
 

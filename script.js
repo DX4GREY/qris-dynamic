@@ -57,9 +57,15 @@
     const uploadQrisBtn = document.getElementById('uploadQrisBtn');
     const uploadQrisInput = document.getElementById('uploadQrisInput');
     const qrStatusSpan = document.getElementById('qrStatus');
+    const generateControls = document.querySelectorAll('.jembut');
     const merchantNameInfo = document.getElementById('merchantNameInfo');
     const merchantCityInfo = document.getElementById('merchantCityInfo');
-    const merchantProviderInfo = document.getElementById('merchantProviderInfo');
+    const merchantPostalInfo = document.getElementById('merchantPostalInfo');
+    const merchantIssuerInfo = document.getElementById('merchantIssuerInfo');
+    const merchantMethodInfo = document.getElementById('merchantMethodInfo');
+    const merchantCategoryInfo = document.getElementById('merchantCategoryInfo');
+    const merchantCurrencyInfo = document.getElementById('merchantCurrencyInfo');
+    const merchantAmountInfo = document.getElementById('merchantAmountInfo');
 
     // set default base QRIS
     baseQrisTextarea.value = DEFAULT_QRIS_BASE;
@@ -90,23 +96,119 @@
         return parsed;
     }
 
-    function updateMerchantInfo() {
-        const rawBase = baseQrisTextarea.value.trim();
-        if (!rawBase || rawBase.length < 4 || !rawBase.includes('010211') || !rawBase.includes('5802ID')) {
-            merchantNameInfo.innerText = '-';
-            merchantCityInfo.innerText = '-';
-            merchantProviderInfo.innerText = '-';
+    function formatCurrencyCode(code) {
+        const map = {
+            '360': 'IDR (Rupiah)',
+            '840': 'USD (US Dollar)',
+            '978': 'EUR (Euro)'
+        };
+        return map[code] || code || '-';
+    }
+
+    function formatAmount(amount) {
+        if (!amount) return '-';
+        const numberValue = Number(amount);
+        if (Number.isNaN(numberValue)) return amount;
+        return 'Rp ' + numberValue.toLocaleString('id-ID');
+    }
+
+    function renderQrCodeFromText(text, statusMessage, statusColor) {
+        if (typeof qrcode === 'undefined') {
+            if (qrStatusSpan) {
+                qrStatusSpan.innerText = '⚠️ Library QR code tidak tersedia.';
+                qrStatusSpan.style.color = '#b91c1c';
+            }
             return;
         }
+
+        try {
+            let qr = qrcode(0, 'M');
+            qr.addData(text);
+            qr.make();
+
+            const cellSize = 4;
+            const margin = 4;
+            const qrSize = qr.getModuleCount();
+            const canvasSize = qrSize * cellSize + margin * 2;
+            qrCanvas.width = canvasSize;
+            qrCanvas.height = canvasSize;
+            const ctx = qrCanvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvasSize, canvasSize);
+            ctx.fillStyle = '#000000';
+            for (let row = 0; row < qrSize; row++) {
+                for (let col = 0; col < qrSize; col++) {
+                    if (qr.isDark(row, col)) {
+                        ctx.fillRect(margin + col * cellSize, margin + row * cellSize, cellSize, cellSize);
+                    }
+                }
+            }
+
+            if (rawQrisSpan) {
+                rawQrisSpan.innerText = text;
+            }
+            if (qrStatusSpan) {
+                qrStatusSpan.innerText = statusMessage || '✅ QR Code siap.';
+                qrStatusSpan.style.color = statusColor || '#15803d';
+            }
+        } catch (error) {
+            if (qrStatusSpan) {
+                qrStatusSpan.innerText = '⚠️ Gagal membuat QR code dari base dynamic.';
+                qrStatusSpan.style.color = '#b91c1c';
+            }
+            console.error(error);
+        }
+    }
+
+    function isDynamicBase(rawBase) {
+        return rawBase.includes('010212') && rawBase.includes('5802ID');
+    }
+
+    function updateMerchantInfo() {
+        const rawBase = baseQrisTextarea.value.trim();
+        const hasValidPoint = rawBase.includes('010211') || rawBase.includes('010212');
+        const dynamicBase = isDynamicBase(rawBase);
+        if (generateControls && generateControls.length) {
+            generateControls.forEach(el => {
+                el.style.display = dynamicBase ? 'none' : 'block';
+            });
+        }
+
+        if (!rawBase || rawBase.length < 4 || !hasValidPoint || !rawBase.includes('5802ID')) {
+            merchantNameInfo.innerText = '-';
+            merchantCityInfo.innerText = '-';
+            merchantPostalInfo.innerText = '-';
+            merchantIssuerInfo.innerText = '-';
+            merchantMethodInfo.innerText = '-';
+            merchantCategoryInfo.innerText = '-';
+            merchantCurrencyInfo.innerText = '-';
+            merchantAmountInfo.innerText = '-';
+            if (dynamicBase && qrStatusSpan) {
+                qrStatusSpan.innerText = '⚠️ Base QRIS dynamic tidak lengkap atau tidak valid.';
+                qrStatusSpan.style.color = '#b91c1c';
+            }
+            return;
+        }
+
+        if (dynamicBase) {
+            renderQrCodeFromText(rawBase, '✅ Base QRIS dynamic terdeteksi, QR code dan raw dihitung langsung dari base.', '#15803d');
+        }
+
         const tlv = parseTLV(rawBase);
+        const nested26 = tlv['26'] ? parseTLV(tlv['26']) : {};
+
         merchantNameInfo.innerText = tlv['59'] || '-';
         merchantCityInfo.innerText = tlv['60'] || '-';
-        let provider = '-';
-        if (tlv['26']) {
-            const nested = parseTLV(tlv['26']);
-            provider = nested['00'] || '-';
+        merchantPostalInfo.innerText = tlv['61'] || '-';
+        merchantIssuerInfo.innerText = nested26['00'] || '-';
+        merchantMethodInfo.innerText = rawBase.includes('010212') ? 'Dynamic' : 'Static';
+        merchantCategoryInfo.innerText = tlv['52'] || '-';
+        merchantCurrencyInfo.innerText = formatCurrencyCode(tlv['53']);
+        merchantAmountInfo.innerText = tlv['54'] ? formatAmount(tlv['54']) : '-';
+        if (dynamicBase && qrStatusSpan) {
+            qrStatusSpan.innerText = '⚠️ Base QRIS sudah dynamic — komponen generate disembunyikan.';
+            qrStatusSpan.style.color = '#f59e0b';
         }
-        merchantProviderInfo.innerText = provider;
     }
 
     baseQrisTextarea.addEventListener('input', updateMerchantInfo);
@@ -178,12 +280,14 @@
             stopped = true;
             stopCamera();
             alert("QRIS terdeteksi:\n" + rawValue);
-            if (rawValue && rawValue.includes('010211') && rawValue.includes('5802ID')) {
+            if (rawValue && (rawValue.includes('010211') || rawValue.includes('010212')) && rawValue.includes('5802ID')) {
                 baseQrisTextarea.value = rawValue;
                 updateMerchantInfo();
-                generateQRISPayment();
+                if (!isDynamicBase(rawValue)) {
+                    generateQRISPayment();
+                }
             } else {
-                alert("Hasil scan tidak valid sebagai QRIS statis. Silakan periksa kembali atau gunakan input manual.");
+                alert("Hasil scan tidak valid sebagai QRIS statis/dinamis. Silakan periksa kembali atau gunakan input manual.");
             }
         };
 
@@ -297,14 +401,19 @@
         try {
             qrStatusSpan.innerText = '🔍 Memproses gambar...';
             const rawValue = await decodeQrisFromImageFile(file);
-            if (rawValue && rawValue.includes('010211') && rawValue.includes('5802ID')) {
+            if (rawValue && (rawValue.includes('010211') || rawValue.includes('010212')) && rawValue.includes('5802ID')) {
                 baseQrisTextarea.value = rawValue;
                 updateMerchantInfo();
-                generateQRISPayment();
-                qrStatusSpan.innerText = '✅ QRIS berhasil diunggah dan terdeteksi.';
-                qrStatusSpan.style.color = '#15803d';
+                if (!isDynamicBase(rawValue)) {
+                    generateQRISPayment();
+                    qrStatusSpan.innerText = '✅ QRIS berhasil diunggah dan terdeteksi.';
+                    qrStatusSpan.style.color = '#15803d';
+                } else {
+                    qrStatusSpan.innerText = '✅ QRIS dynamic berhasil diunggah. Generate dinonaktifkan.';
+                    qrStatusSpan.style.color = '#15803d';
+                }
             } else {
-                throw new Error('QR code dari gambar bukan format QRIS statis yang valid.');
+                throw new Error('QR code dari gambar bukan format QRIS statis/dinamis yang valid.');
             }
         } catch (err) {
             alert(err.message || err);
@@ -323,6 +432,9 @@
             if (!rawBase) {
                 throw new Error("Base QRIS tidak boleh kosong. Silakan isi string QRIS statis.");
             }
+            if (isDynamicBase(rawBase)) {
+                throw new Error("Base QRIS sudah dynamic. Generate QRIS tidak diperlukan.");
+            }
             // Pastikan panjang minimal 4 (untuk slice(-4))
             if (rawBase.length < 4) {
                 throw new Error("Base QRIS harus memiliki panjang minimal 4 karakter (terdapat dummy CRC 4 digit di akhir)");
@@ -330,8 +442,8 @@
             if (!rawBase.includes("5802ID")) {
                 throw new Error("Base QRIS harus mengandung '5802ID' sebagai separator merchant & data tambahan.");
             }
-            if (!rawBase.includes("010211")) {
-                throw new Error("Base QRIS harus mengandung '010211' (Point of Initiation Method statis). Fungsi akan mengubah ke '010212' (dinamis).");
+            if (!rawBase.includes("010211") && !rawBase.includes("010212")) {
+                throw new Error("Base QRIS harus mengandung '010211' (statis) atau '010212' (dinamis).");
             }
 
             let nominalRaw = nominalInput.value.trim();
