@@ -149,6 +149,20 @@
             background: #cbd5e1;
             transform: scale(0.98);
         }
+        .btn-upload {
+            background: #e2e8f0;
+            width: 100%;
+            border: none;
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+            border-radius: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-upload:hover {
+            background: #cbd5e1;
+            transform: scale(0.98);
+        }
         .qr-container {
             background: #fff;
             padding: 1rem;
