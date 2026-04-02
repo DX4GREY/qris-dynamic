@@ -206,7 +206,7 @@
         merchantCurrencyInfo.innerText = formatCurrencyCode(tlv['53']);
         merchantAmountInfo.innerText = tlv['54'] ? formatAmount(tlv['54']) : '-';
         if (dynamicBase && qrStatusSpan) {
-            qrStatusSpan.innerText = '⚠️ Base QRIS sudah dynamic — komponen generate disembunyikan.';
+            qrStatusSpan.innerText = '⚠️ Base QRIS sudah dynamic, QRIS tidak bisa di generate.';
             qrStatusSpan.style.color = '#f59e0b';
         }
     }
