@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>QRIS Dynamic Payment Generator | Buat QR Code dengan Nominal & Fee</title>
+    <!-- qrcode-generator (lightweight, pure JS) -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div class="card">
+    <div class="header">
+        <h1>💳 QRIS Dinamis ✨</h1>
+        <p>Buat QR code pembayaran QRIS dengan nominal & biaya layanan (service fee)</p>
+    </div>
+    <div class="content">
+        <div class="grid-2col">
+            <!-- Panel kiri: input fields -->
+            <div class="form-panel">
+                <div class="form-group">
+                    <label>🔹 Base QRIS (String statis tanpa nominal & CRC) <span class="badge">contoh siap pakai</span></label>
+                    <textarea id="baseQrisInput" rows="3" placeholder="Masukkan string QRIS statis yang berisi '010211' dan '5802ID' serta diakhiri 4 karakter dummy (contoh: ...AAAA)"></textarea>
+                    <div class="note">* Harus mengandung <strong>010211</strong> dan <strong>5802ID</strong> serta minimal panjang 4 karakter (4 digit dummy CRC akan di-replace).</div>
+                    <button class="btn-scan" id="scanBtn">SCAN QRIS</button>
+                    <div class="merchant-info">
+                        <div><strong>Merchant:</strong> <span id="merchantNameInfo">-</span></div>
+                        <div><strong>Kota:</strong> <span id="merchantCityInfo">-</span></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>💰 Nominal (IDR)</label>
+                    <input type="number" id="nominalInput" value="25000" step="500" min="1" placeholder="Contoh: 25000">
+                    <div class="note">Tanpa titik/koma, angka bulat (contoh: 15000)</div>
+                </div>
+
+                <div class="form-group">
+                    <label>⚙️ Tambahkan Service Fee?</label>
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <label style="display: flex; align-items: center; gap: 6px; font-weight: normal;">
+                            <input type="radio" name="useFee" value="y" id="feeYes"> Ya
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 6px; font-weight: normal;">
+                            <input type="radio" name="useFee" value="n" id="feeNo" checked> Tidak
+                        </label>
+                    </div>
+                </div>
+
+                <div id="feeOptionsPanel" style="display: none;">
+                    <div class="form-group">
+                        <label>🏷️ Tipe Fee</label>
+                        <div class="fee-options">
+                            <label class="radio-group">
+                                <input type="radio" name="feeType" value="r" checked> Persentase (%)
+                            </label>
+                            <label class="radio-group">
+                                <input type="radio" name="feeType" value="f"> Nominal tetap (IDR)
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>💵 Nilai Fee</label>
+                        <input type="text" id="feeValueInput" placeholder="Contoh: 2.5 (untuk 2.5%) atau 3000" value="2.5">
+                        <div class="note">Jika persentase, tulis angka (bisa desimal). Jika nominal tetap, tulis angka IDR.</div>
+                    </div>
+                </div>
+
+                <button class="btn-generate" id="generateBtn">✨ GENERATE QR CODE & PAYMENT ✨</button>
+                <div class="flex-btns">
+                    <button class="copy-btn" id="copyRawBtn">📋 Salin Raw QRIS</button>
+                </div>
+            </div>
+
+            <!-- Panel kanan: QR code & hasil -->
+            <div class="qr-panel">
+                <div style="font-weight: 600; margin-bottom: 12px;">🔘 QR Code Pembayaran</div>
+                <div id="qrDisplay" class="qr-code-placeholder">
+                    <canvas id="qrCanvas" width="250" height="250" style="width:100%; max-width:250px; height:auto;"></canvas>
+                    <div style="margin-top: 10px; font-size: 13px; color: #2c7da0;" id="qrStatus">⚡ Masukkan nominal dan klik generate</div>
+                </div>
+                <div class="raw-string">
+                    <strong>📄 Raw QRIS String :</strong><br>
+                    <span id="rawQrisString">—</span>
+                </div>
+                <div class="note" style="margin-top: 12px; text-align: center;">
+                    ✅ QRIS dinamis (010212) dengan nominal & fee otomatis terapkan CRC16
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="./script.js"></script>
+</body>
+</html>
