@@ -23,6 +23,8 @@
                     <label>🔹 Base QRIS (String statis tanpa nominal & CRC) <span class="badge">contoh siap pakai</span></label>
                     <textarea id="baseQrisInput" rows="3" placeholder="Masukkan string QRIS statis yang berisi '010211' dan '5802ID' serta diakhiri 4 karakter dummy (contoh: ...AAAA)"></textarea>
                     <div class="note">* Harus mengandung <strong>010211</strong> dan <strong>5802ID</strong> serta minimal panjang 4 karakter (4 digit dummy CRC akan di-replace).</div>
+                    <button class="btn-upload" id="uploadQrisBtn">📂 Upload QRIS String dari Gambar</button>
+                    <input type="file" id="uploadQrisInput" accept="image/*" hidden>
                     <button class="btn-scan" id="scanBtn">SCAN QRIS</button>
                     <div class="merchant-info">
                         <div><strong>Merchant:</strong> <span id="merchantNameInfo">-</span></div>

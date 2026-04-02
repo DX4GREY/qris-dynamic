@@ -54,6 +54,8 @@
     const rawQrisSpan = document.getElementById('rawQrisString');
     const copyRawBtn = document.getElementById('copyRawBtn');
     const scanBtn = document.getElementById('scanBtn');
+    const uploadQrisBtn = document.getElementById('uploadQrisBtn');
+    const uploadQrisInput = document.getElementById('uploadQrisInput');
     const qrStatusSpan = document.getElementById('qrStatus');
     const merchantNameInfo = document.getElementById('merchantNameInfo');
     const merchantCityInfo = document.getElementById('merchantCityInfo');
@@ -251,6 +253,67 @@
     }
 
     scanBtn.addEventListener('click', scanQRISWithCamera);
+    uploadQrisBtn.addEventListener('click', () => uploadQrisInput.click());
+
+    function decodeQrisFromImageFile(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.naturalWidth;
+                    canvas.height = img.naturalHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    try {
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        if (typeof jsQR !== 'function') {
+                            reject(new Error('Library jsQR tidak ditemukan.'));
+                            return;
+                        }
+                        const code = jsQR(imageData.data, imageData.width, imageData.height);
+                        if (code && code.data) {
+                            resolve(code.data);
+                        } else {
+                            reject(new Error('Tidak ditemukan QR code valid pada gambar.'));
+                        }
+                    } catch (err) {
+                        reject(new Error('Gagal membaca gambar QR: ' + err.message));
+                    }
+                };
+                img.onerror = () => reject(new Error('Gagal memuat file gambar.'));
+                img.src = reader.result;
+            };
+            reader.onerror = () => reject(new Error('Gagal membaca file gambar.'));
+            reader.readAsDataURL(file);
+        });
+    }
+
+    uploadQrisInput.addEventListener('change', async (event) => {
+        const file = event.target.files && event.target.files[0];
+        if (!file) return;
+
+        try {
+            qrStatusSpan.innerText = '🔍 Memproses gambar...';
+            const rawValue = await decodeQrisFromImageFile(file);
+            if (rawValue && rawValue.includes('010211') && rawValue.includes('5802ID')) {
+                baseQrisTextarea.value = rawValue;
+                updateMerchantInfo();
+                generateQRISPayment();
+                qrStatusSpan.innerText = '✅ QRIS berhasil diunggah dan terdeteksi.';
+                qrStatusSpan.style.color = '#15803d';
+            } else {
+                throw new Error('QR code dari gambar bukan format QRIS statis yang valid.');
+            }
+        } catch (err) {
+            alert(err.message || err);
+            qrStatusSpan.innerText = '⚠️ ' + (err.message || 'Gagal memproses gambar QR.');
+            qrStatusSpan.style.color = '#b91c1c';
+        } finally {
+            uploadQrisInput.value = '';
+        }
+    });
 
     // validasi dan generate QR
     function generateQRISPayment() {

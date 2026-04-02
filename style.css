@@ -158,6 +158,7 @@
             border-radius: 1rem;
             cursor: pointer;
             transition: all 0.2s;
+            margin-top: 0.5rem;
         }
         .btn-upload:hover {
             background: #cbd5e1;
